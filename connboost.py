@@ -1,5 +1,3 @@
-#! /Users/romeech/projects/python/conn-booster/venv/bin/python
-
 import argparse
 import asyncio
 import copy
@@ -88,10 +86,6 @@ if __name__ == '__main__':
 
     setup_commmand_parser(subs)
 
-    # TODO: subparser for 'product'
-    # product_parser = subs.add_parser('product', help='Creates products')
-    # product_parser.set_defaults(send_products_f)
-
     tar_parser = subs.add_parser('tar', help='Creates tier account requests')
     tar_parser.add_argument("--ta-id", dest='ta_id', type=str)
     tar_parser.add_argument("--ta-uid", dest='ta_uid', type=str)
@@ -101,7 +95,6 @@ if __name__ == '__main__':
     passed_args = copy.deepcopy(args.__dict__)
     config = read_config(passed_args.pop('config', None) or CONFIG_PATH)
 
-    breakpoint()
     # separate common args from a subcommand ones
     api_base = passed_args.pop('api_base') or config.get('api_base', DEFAULT_API_BASE)
     token = passed_args.pop('token') or config.get('token')
@@ -112,16 +105,4 @@ if __name__ == '__main__':
     command_config = config.get(command_fn.__name__, {})
     command_config.update({k: v for k, v in passed_args.items() if k in command_config and bool(v)})
 
-    breakpoint()
     command_fn(api_base, token, req_num, **command_config)
-
-
-# import asyncio
-# import uvloop
-
-# async def main():
-#     # Main entry-point.
-#     ...
-
-# uvloop.install()
-# asyncio.run(launch_requests())
