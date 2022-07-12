@@ -1,0 +1,21 @@
+ ☐ Info logs on async calls to see what's happening
+ ✔ config for base params @done (22-07-12 20:34)
+ ✔ config for purchase @done (22-07-12 20:37)
+ ☐ config for tar
+ ☐ retrieve marketplace if not specified
+ ☐ retrieve product if not specified
+ ☐ retrieve product items if not specified
+ ☐ retrieve connection if not specified. Use UI-connection if no connections
+ ☐ run wo python
+ ☐ command for product
+ ☐ README.md
+ ☐ Use UV-loop
+    # import asyncio
+    # import uvloop
+
+    # async def main():
+    #     # Main entry-point.
+    #     ...
+
+    # uvloop.install()
+    # asyncio.run(launch_requests())
