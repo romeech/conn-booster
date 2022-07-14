@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 import copy
 import logging
 import sys
@@ -7,8 +6,8 @@ import json
 
 from aiohttp import ClientSession
 
-from tasks.purchase import setup_commmand_parser
-from tasks.tar import build_tar_tasks
+from tasks.purchase import setup_purchase_command
+from tasks.tar import setup_tar_command
 
 
 DEFAULT_API_BASE = 'https://api.cnct.info/public/v1'
@@ -44,33 +43,6 @@ async def post(session: ClientSession, url: str, token: str = None, **kwargs):
     return resp_body
 
 
-async def launch_requests(token, post_tasks):
-    async with ClientSession() as session:
-        requests = []
-        requests = [post(session, url, token, data=json.dumps(body)) for url, body in post_tasks]
-        results = await asyncio.gather(*requests)
-        return results
-
-
-def send_tars_f(args):
-    config = read_config()
-    args = args.__dict__
-    config.update(args)
-
-    api_base = args.get('api_base', DEFAULT_API_BASE)
-    ta_id = args['ta_id']
-    ta_uid = args['ta_uid']
-    token = args['token']
-    req_num = args['req_num']
-
-    post_tasks = build_tar_tasks(api_base, req_num, ta_id, ta_uid)
-    asyncio.run(launch_requests(token, post_tasks))
-
-
-def send_products_f(args):
-    pass
-
-
 def noop_fn(api_base, token, requests_number, **kwargs):
     print('No execution function is specified. Nothing to do')
 
@@ -84,12 +56,8 @@ if __name__ == '__main__':
 
     subs = parser.add_subparsers(help="commands")
 
-    setup_commmand_parser(subs)
-
-    tar_parser = subs.add_parser('tar', help='Creates tier account requests')
-    tar_parser.add_argument("--ta-id", dest='ta_id', type=str)
-    tar_parser.add_argument("--ta-uid", dest='ta_uid', type=str)
-    tar_parser.set_defaults(func=send_tars_f)
+    for setup_command in (setup_purchase_command, setup_tar_command):
+        setup_command(subs)
 
     args = parser.parse_args()
     passed_args = copy.deepcopy(args.__dict__)

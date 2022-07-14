@@ -1,7 +1,6 @@
-import asyncio
-
 from utils.faker import fake
-from utils.transport import launch_requests
+
+from commands.base import Command
 
 
 class PurchaseSpec(object):
@@ -14,6 +13,13 @@ class PurchaseSpec(object):
         self.customer = kwargs.get('tiers', {}).get('customer')
         self.tier1 = kwargs.get('tiers', {}).get('tier1')
         self.tier2 = kwargs.get('tiers', {}).get('tier2')
+
+
+class Purchase(Command):
+    def __call__(self, api_base, token, requests_number, **kwargs):
+        purchase_data = PurchaseSpec(**kwargs)
+        post_tasks = build_post_tasks(api_base, requests_number, purchase_data)
+        self._launch(token, post_tasks)
 
 
 def tier_body(uuid=None):
@@ -87,13 +93,7 @@ def build_post_tasks(api_base: str, req_num: int, purchase_data: PurchaseSpec):
     return [(ff_url, build_purchase_body(purchase_data)) for _ in range(req_num)]
 
 
-def purchase(api_base, token, requests_number, **kwargs):
-    purchase_data = PurchaseSpec(**kwargs)
-    post_tasks = build_post_tasks(api_base, requests_number, purchase_data)
-    asyncio.run(launch_requests(token, post_tasks))
-
-
-def setup_commmand_parser(arg_subparsers):
+def setup_purchase_command(arg_subparsers):
     purchase_parser = arg_subparsers.add_parser('purchase', help='Creates purchase requests')
     purchase_parser.add_argument(
         "-p", "--product-id", dest='product_id', type=str,
@@ -111,4 +111,5 @@ def setup_commmand_parser(arg_subparsers):
         "-C", "--connection-id", dest='connection_id', type=str,
         help='ID of a connection to hub where a target product is listed to.',
     )
+    purchase = Purchase()
     purchase_parser.set_defaults(func=purchase)
