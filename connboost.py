@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 import copy
 import logging
@@ -6,8 +7,8 @@ import json
 
 from aiohttp import ClientSession
 
-from tasks.purchase import setup_purchase_command
-from tasks.tar import setup_tar_command
+from commands.purchase import setup_purchase_command
+from commands.tar import setup_tar_command
 
 
 DEFAULT_API_BASE = 'https://api.cnct.info/public/v1'
@@ -27,7 +28,7 @@ logging.getLogger("chardet.charsetprober").disabled = True
 def read_config(path):
     try:
         config = json.load(open(path, 'r'))
-    except json.decoder.JSONDecodeError:
+    except (json.decoder.JSONDecodeError, FileNotFoundError):
         config = {}
     return config
 
@@ -70,7 +71,8 @@ if __name__ == '__main__':
 
     command_fn = passed_args.pop('func', noop_fn)
 
-    command_config = config.get(command_fn.__name__, {})
+    cmd_name = type(command_fn).__name__.split('.')[-1].lower()
+    command_config = config.get(cmd_name, {})
     command_config.update({k: v for k, v in passed_args.items() if k in command_config and bool(v)})
 
     command_fn(api_base, token, req_num, **command_config)

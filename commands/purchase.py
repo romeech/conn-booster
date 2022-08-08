@@ -1,24 +1,29 @@
+from copy import deepcopy
+
 from utils.faker import fake
+from utils.transport import get
 
 from commands.base import Command
 
 
 class PurchaseSpec(object):
     def __init__(self, **kwargs):
-        self.product_id = kwargs['product_id']
-        self.item_names = kwargs['items'].split(',')
+        self.product_id = kwargs.get('product_id')
+        self.item_names = kwargs.get('items', '').split(',')
         self.params = kwargs.get('params', ['param_a', 'param_b'])
-        self.marketplace_id = kwargs['marketplace_id']
+        self.marketplace_id = kwargs.get('marketplace_id')
         self.connection_id = kwargs.get('connection_id')
         self.customer = kwargs.get('tiers', {}).get('customer')
         self.tier1 = kwargs.get('tiers', {}).get('tier1')
         self.tier2 = kwargs.get('tiers', {}).get('tier2')
 
+        self.product_version = None
+
 
 class Purchase(Command):
     def __call__(self, api_base, token, requests_number, **kwargs):
         purchase_data = PurchaseSpec(**kwargs)
-        post_tasks = build_post_tasks(api_base, requests_number, purchase_data)
+        post_tasks = build_post_tasks(api_base, requests_number, purchase_data, token)
         self._launch(token, post_tasks)
 
 
@@ -88,9 +93,65 @@ def build_purchase_body(purchase_data: PurchaseSpec):
     return data
 
 
-def build_post_tasks(api_base: str, req_num: int, purchase_data: PurchaseSpec):
+def prepare_purchase_spec(initial: PurchaseSpec, api_base: str, token: str):
+    refined = deepcopy(initial)
+
+    if not initial.product_id:
+        resp_body = get(
+            f"{api_base}/products?"
+            "ordering(-name)"
+            "&(((visibility.listing=true)|(visibility.syndication=true)))"
+            "&limit=1&offset=0",
+            token,
+        )
+
+        if resp_body:
+            product = resp_body[0]
+            refined.product_id = product['id']
+            refined.product_version = product['version']
+
+    if initial.item_names == ['']:
+        resp_body = get(
+            f"{api_base}/products/{refined.product_id}/versions/{refined.product_version}/items",
+            token,
+        )
+        refined.item_names = [item['id'] for item in resp_body]
+
+    if initial.params == ['param_a', 'param_b']:
+        resp_body = get(
+            f"{api_base}/products/{refined.product_id}/parameters?limit=1000&offset=0",
+            token,
+        )
+        refined.params = [
+            param['name']
+            for param in resp_body
+            if param['constraints']['required'] and param['scope'] == 'asset'
+        ]
+
+    if not initial.marketplace_id:
+        resp_body = get(
+            f"{api_base}/listings?"
+            "ordering(-created)&limit=10&offset=0"
+            f"&product__id={refined.product_id}",
+            token,
+        )
+        if resp_body:
+            listing = resp_body[0]
+            refined.marketplace_id = listing['contract']['marketplace']['id']
+
+    if not initial.connection_id:
+        resp_body = get(f"{api_base}/products/{refined.product_id}/connections", token)
+        if resp_body:
+            refined.connection_id = resp_body[0]['id']
+
+    return refined
+
+
+def build_post_tasks(api_base: str, req_num: int, purchase_data: PurchaseSpec, token: str):
     ff_url = f"{api_base}/requests"
-    return [(ff_url, build_purchase_body(purchase_data)) for _ in range(req_num)]
+    refined_data = prepare_purchase_spec(purchase_data, api_base, token)
+    breakpoint()
+    return [(ff_url, build_purchase_body(refined_data)) for _ in range(req_num)]
 
 
 def setup_purchase_command(arg_subparsers):
