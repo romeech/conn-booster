@@ -150,7 +150,6 @@ def prepare_purchase_spec(initial: PurchaseSpec, api_base: str, token: str):
 def build_post_tasks(api_base: str, req_num: int, purchase_data: PurchaseSpec, token: str):
     ff_url = f"{api_base}/requests"
     refined_data = prepare_purchase_spec(purchase_data, api_base, token)
-    breakpoint()
     return [(ff_url, build_purchase_body(refined_data)) for _ in range(req_num)]
 
 
