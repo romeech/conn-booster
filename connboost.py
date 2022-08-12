@@ -5,8 +5,6 @@ import logging
 import sys
 import json
 
-from aiohttp import ClientSession
-
 from commands.purchase import setup_purchase_command
 from commands.tar import setup_tar_command
 
@@ -31,17 +29,6 @@ def read_config(path):
     except (json.decoder.JSONDecodeError, FileNotFoundError):
         config = {}
     return config
-
-
-async def post(session: ClientSession, url: str, token: str = None, **kwargs):
-    kwargs['headers'] = {
-        'Authorization': token,
-        'Content-Type': 'application/json',
-    }
-    resp = await session.request(method='POST', url=url, **kwargs)
-    resp_body = await resp.json()
-    logger.info("Got response [%s] for URL: %s, result: %s", resp.status, url, resp_body)
-    return resp_body
 
 
 def noop_fn(api_base, token, requests_number, **kwargs):
