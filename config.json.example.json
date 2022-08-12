@@ -1,0 +1,17 @@
+{
+    "api_base": "https://api.cnct.info/public/v1",
+    "token": "ApiKey SU-027-302-002:8d19ea069402743aef699bbf35da1d1447027002",
+    "purchase": {
+        "product_id": "PRD-000-027-001",
+        "items": "PRD-000-027-001-0001,PRD-000-027-001-0002",
+        "marketplace_id": "MP-02721",
+        "connection_id": "CT-4652-4795",
+        "tiers": {
+            "customer": {"id": "TA-8511-3851-4589"},
+            "tier1": {"id": "TA-5587-2309-3725"}
+        }
+    },
+    "tar": {
+        "ta_id": ""
+    }
+}
